@@ -1,0 +1,1429 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
+<meta http-equiv="Pragma" content="no-cache"/>
+<meta http-equiv="Expires" content="0"/>
+<title>Prikklok – Digitale Tijdregistratie App voor Bedrijven | iOS & Android</title>
+<meta name="description" content="Prikklok digitaliseert uw werkuren. Medewerkers prikken eenvoudig in en uit via smartphone. Real-time overzichten, GDPR-conform, iOS & Android."/>
+<meta name="robots" content="index, follow"/>
+<link rel="canonical" href="https://prikklok.info/"/>
+<!-- Favicon -->
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%230071e3'/><text y='.9em' font-size='70' x='15' fill='white'>P</text></svg>"/>
+<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%230071e3'/><text y='.9em' font-size='70' x='15' fill='white'>P</text></svg>"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#fff;--bg2:#f5f5f7;--bg3:#e8e8ed;
+  --text:#1d1d1f;--text2:#6e6e73;--text3:#aeaeb2;
+  --blue:#0071e3;--bh:#0077ed;--green:#34c759;--red:#ff3b30;--orange:#ff9500;--purple:#bf5af2;
+  --sep:rgba(0,0,0,.07);--card:#f5f5f7;--nav:rgba(255,255,255,.85);
+  --f:-apple-system,'Inter',BlinkMacSystemFont,sans-serif;
+}
+html.dark{
+  --bg:#000;--bg2:#1c1c1e;--bg3:#2c2c2e;
+  --text:#f5f5f7;--text2:#98989d;--text3:#636366;
+  --blue:#2997ff;--bh:#47a8ff;
+  --sep:rgba(255,255,255,.07);--card:#1c1c1e;--nav:rgba(0,0,0,.85);
+}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:var(--f);font-size:17px;
+  line-height:1.47;-webkit-font-smoothing:antialiased;overflow-x:hidden;
+  transition:background .3s,color .3s;cursor:none}
+
+/* ── CURSOR ──────────────────────────── */
+#C{position:fixed;pointer-events:none;z-index:99999;
+  width:14px;height:14px;background:var(--blue);border-radius:50%;
+  transform:translate(-50%,-50%);transition:width .2s,height .2s,background .2s,border-radius .2s;
+  mix-blend-mode:normal;opacity:0}
+#CR{position:fixed;pointer-events:none;z-index:99998;
+  width:42px;height:42px;border:1.5px solid rgba(0,113,227,.35);
+  border-radius:50%;transform:translate(-50%,-50%);
+  transition:width .3s,height .3s,border-color .3s,opacity .3s;opacity:0}
+#CLBL{position:fixed;pointer-events:none;z-index:99999;
+  font-size:11px;font-weight:700;color:#fff;background:var(--blue);
+  padding:4px 10px;border-radius:980px;white-space:nowrap;
+  opacity:0;transform:translate(16px,-50%);transition:opacity .2s;letter-spacing:.03em}
+#C.big{width:64px;height:64px;background:rgba(0,113,227,.1);border-radius:50%}
+#C.sq{border-radius:6px}
+#CR.big{opacity:0!important}
+
+/* ── PROGRESS ───────────────────────── */
+#PROG{position:fixed;top:0;left:0;z-index:10001;height:3px;width:0%;
+  background:linear-gradient(90deg,var(--blue),var(--green),var(--purple));
+  pointer-events:none;transition:width .08s}
+
+/* ── TOAST ──────────────────────────── */
+#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);
+  background:var(--text);color:var(--bg);padding:12px 24px;border-radius:980px;
+  font-size:14px;font-weight:500;z-index:10002;pointer-events:none;
+  transition:transform .4s cubic-bezier(.34,1.56,.64,1),opacity .3s;opacity:0;white-space:nowrap}
+#toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+
+/* ── SHORTCUTS HINT ─────────────────── */
+#shortcuts{position:fixed;top:64px;right:16px;z-index:9001;
+  background:var(--card);border:1px solid var(--sep);border-radius:14px;padding:14px 16px;
+  font-size:12px;color:var(--text2);display:flex;flex-direction:column;gap:8px;
+  opacity:0;transform:translateX(20px);transition:opacity .3s,transform .3s;pointer-events:none}
+#shortcuts.show{opacity:1;transform:none}
+#shortcuts div{display:flex;align-items:center;gap:8px}
+.kbd{background:var(--bg3);border-radius:5px;padding:2px 7px;font-size:11px;font-weight:600;color:var(--text);font-family:monospace}
+#sc-close{position:absolute;top:8px;right:10px;font-size:16px;cursor:none;color:var(--text3);pointer-events:auto}
+
+/* ── NAV ────────────────────────────── */
+nav{position:fixed;top:0;left:0;right:0;z-index:9999;height:52px;
+  background:var(--nav);backdrop-filter:saturate(180%) blur(24px);
+  border-bottom:1px solid var(--sep);display:flex;align-items:center;justify-content:center;
+  transition:background .3s,border-color .3s}
+.nv{width:100%;max-width:1080px;padding:0 24px;display:flex;align-items:center;justify-content:space-between}
+.nl{font-size:20px;font-weight:700;letter-spacing:-.5px;color:var(--text);text-decoration:none}
+.nlinks{display:flex;align-items:center;gap:22px;list-style:none}
+.nlinks a{font-size:12px;color:var(--text);text-decoration:none;opacity:.75;transition:opacity .2s}
+.nlinks a:hover{opacity:1}
+.npill{background:var(--blue);color:#fff!important;padding:6px 16px;border-radius:980px;font-size:12px!important;opacity:1!important;transition:background .2s,transform .2s!important}
+.npill:hover{background:var(--bh)!important;transform:scale(1.04)!important}
+.nav-right{display:flex;align-items:center;gap:10px}
+.icobtn{background:none;border:1px solid var(--sep);border-radius:50%;width:32px;height:32px;
+  font-size:14px;cursor:none;color:var(--text);display:flex;align-items:center;justify-content:center;
+  transition:border-color .2s,background .2s}
+.icobtn:hover{border-color:var(--blue)}
+.icobtn.active{background:var(--blue);color:#fff;border-color:var(--blue)}
+
+/* ── HERO ───────────────────────────── */
+.hero{min-height:100svh;padding-top:52px;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;text-align:center;
+  padding-left:24px;padding-right:24px;padding-bottom:40px;position:relative;overflow:hidden}
+#pCanvas{position:absolute;inset:0;z-index:0;pointer-events:none}
+.hero-c{position:relative;z-index:2;padding-top:32px}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 3px rgba(52,199,89,.25)}50%{box-shadow:0 0 0 6px rgba(52,199,89,.1)}}
+@keyframes fu{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+h1{font-size:clamp(48px,7.5vw,96px);font-weight:800;letter-spacing:-.055em;line-height:1;
+  color:var(--text);max-width:860px;margin:0 auto 24px}
+@media(max-width:860px){
+  h1{font-size:clamp(32px,9vw,56px);letter-spacing:-.04em}
+}
+.ch{display:inline-block;opacity:0;transform:translateY(28px) rotate(1.5deg);
+  transition:opacity .35s,transform .35s;will-change:transform}
+.ch.on{opacity:1;transform:none}
+.hsub{font-size:clamp(17px,2.2vw,22px);color:var(--text2);max-width:520px;margin:0 auto 40px;
+  line-height:1.47;letter-spacing:-.015em;opacity:0;animation:fu .6s .7s forwards}
+.hbtns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;
+  margin-bottom:52px;opacity:0;animation:fu .6s .85s forwards}
+.mag{display:inline-block;position:relative}
+.btn{display:inline-flex;align-items:center;gap:8px;font-family:var(--f);
+  font-size:17px;font-weight:400;letter-spacing:-.015em;text-decoration:none;
+  padding:14px 28px;border-radius:980px;cursor:none;border:none;
+  transition:background .2s,box-shadow .2s;position:relative;overflow:hidden}
+.btn::after{content:'';position:absolute;inset:0;border-radius:inherit;
+  background:rgba(255,255,255,.35);transform:scale(0);opacity:0;pointer-events:none}
+.btn.rip::after{animation:rip .5s ease forwards}
+@keyframes rip{to{transform:scale(3);opacity:0}}
+.bp{background:var(--blue);color:#fff}.bp:hover{background:var(--bh);box-shadow:0 8px 32px rgba(0,113,227,.4)}
+.bs{background:var(--card);color:var(--blue)}.bs:hover{background:var(--bg3)}
+
+/* ── PHONE HERO ─────────────────────── */
+.ph-wrap{opacity:0;animation:fu .6s 1s forwards;position:relative;display:inline-block}
+.ph{width:224px;height:448px;background:var(--bg2);border-radius:44px;
+  border:8px solid var(--bg3);position:relative;overflow:hidden;margin:0 auto;
+  box-shadow:0 48px 96px rgba(0,0,0,.18);
+  transition:transform .5s cubic-bezier(.34,1.56,.64,1),box-shadow .4s}
+.ph::before{content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);
+  width:86px;height:24px;background:var(--bg3);border-radius:0 0 16px 16px;z-index:5}
+.ph-scr{padding:36px 12px 12px;height:100%;display:flex;flex-direction:column;gap:10px}
+.ptime-n{font-size:34px;font-weight:700;letter-spacing:-.04em;text-align:center;
+  font-variant-numeric:tabular-nums}
+.ptime-d{font-size:10px;color:var(--text2);text-align:center;margin-top:-4px}
+.pbtn-wrap{display:flex;justify-content:center}
+.pbtn{width:112px;height:112px;border-radius:50%;background:var(--blue);border:none;
+  cursor:none;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:3px;box-shadow:0 0 0 10px rgba(0,113,227,.12),0 12px 28px rgba(0,113,227,.4);
+  transition:background .3s,box-shadow .3s,transform .12s;
+  position:relative;overflow:hidden}
+.pbtn:active,.pbtn.pressed{transform:scale(.9)}
+.pbtn.in{background:var(--green);box-shadow:0 0 0 10px rgba(52,199,89,.12),0 12px 28px rgba(52,199,89,.4)}
+.pbtn::after{content:'';position:absolute;inset:0;border-radius:50%;
+  background:rgba(255,255,255,.4);transform:scale(0);opacity:0;pointer-events:none}
+.pbtn.rip::after{animation:rip .6s ease forwards}
+.pbtn-i{font-size:28px;line-height:1;transition:transform .3s}
+.pbtn.in .pbtn-i{transform:rotate(10deg)}
+.pbtn-l{font-size:9px;font-weight:700;color:#fff;letter-spacing:.06em;text-transform:uppercase}
+.pstats{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.pst{background:var(--bg);border-radius:12px;padding:9px 11px}
+.pst-n{font-size:15px;font-weight:700;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+.pst-l{font-size:9px;color:var(--text2)}
+.pnote{font-size:9px;color:var(--text2);text-align:center;transition:color .3s}
+.pnote.active{color:var(--green)}
+
+/* ── SCROLL SEQUENCE ────────────────── */
+#seq{height:500vh;position:relative}
+.seq-sticky{position:sticky;top:0;height:100vh;display:flex;align-items:center;justify-content:center;overflow:hidden;background:var(--bg2)}
+.seq-inner{display:grid;grid-template-columns:1fr 1fr;gap:80px;align-items:center;max-width:1080px;padding:0 24px;width:100%}
+.seq-phone{width:240px;height:480px;background:var(--bg);border-radius:44px;border:8px solid var(--bg3);
+  position:relative;overflow:hidden;margin:0 auto;
+  box-shadow:0 48px 96px rgba(0,0,0,.15);transform:perspective(800px) rotateY(-8deg);
+  transition:transform .6s}
+.seq-phone::before{content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);
+  width:86px;height:24px;background:var(--bg3);border-radius:0 0 16px 16px;z-index:5}
+.seq-frame{position:absolute;inset:0;padding:40px 14px 14px;
+  display:flex;flex-direction:column;gap:10px;
+  opacity:0;transform:translateX(40px);
+  transition:opacity .5s,transform .5s;pointer-events:none}
+.seq-frame.active{opacity:1;transform:none}
+.seq-frame.exit{opacity:0;transform:translateX(-40px)}
+.seq-txt{transition:opacity .5s,transform .5s}
+.seq-txt.hidden{opacity:0;transform:translateY(16px);position:absolute;pointer-events:none}
+#seqTxt{position:relative}
+
+.sframe-title{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);margin-bottom:4px}
+.big-clk{font-size:40px;font-weight:800;letter-spacing:-.05em;text-align:center;font-variant-numeric:tabular-nums}
+.clk-sub{font-size:10px;color:var(--text2);text-align:center;margin-top:-4px}
+.mini-punch{width:88px;height:88px;border-radius:50%;background:var(--blue);border:none;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:2px;margin:0 auto;box-shadow:0 0 0 8px rgba(0,113,227,.12)}
+.mini-punch.on{background:var(--green)}
+.mini-punch span:first-child{font-size:24px}
+.mini-punch span:last-child{font-size:8px;font-weight:700;color:#fff;letter-spacing:.05em;text-transform:uppercase}
+
+/* Chart inside seq */
+.seq-chart{display:flex;align-items:flex-end;gap:5px;height:80px;flex:1}
+.sc-bar{flex:1;border-radius:4px 4px 0 0;background:var(--blue);opacity:.5;
+  transition:height .7s cubic-bezier(.34,1.56,.64,1)}
+.seq-frame.active .sc-bar{opacity:1}
+
+/* Notif inside seq */
+.seq-notif{background:var(--card);border-radius:14px;padding:12px;
+  display:flex;gap:10px;align-items:flex-start;
+  transform:translateX(20px);opacity:0;transition:transform .4s,opacity .4s}
+.seq-frame.active .seq-notif{transform:none;opacity:1}
+.seq-notif:nth-child(2){transition-delay:.1s}
+.seq-notif:nth-child(3){transition-delay:.2s}
+.sn-ico{font-size:18px;width:34px;height:34px;border-radius:10px;background:var(--bg);
+  display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.sn-t{font-size:12px;font-weight:600;letter-spacing:-.02em}
+.sn-s{font-size:10px;color:var(--text2)}
+
+.seq-mob-dot{width:8px;height:8px;border-radius:50%;background:var(--bg3);
+  border:none;cursor:pointer;transition:background .2s,width .2s;padding:0}
+.seq-mob-dot.on{background:var(--blue);width:20px;border-radius:4px}
+
+/* ── STATS ──────────────────────────── */
+.stats{background:var(--bg2);padding:72px 24px;display:flex;justify-content:center}
+.si{width:100%;max-width:1080px;display:grid;grid-template-columns:repeat(4,1fr);
+  gap:2px;background:var(--sep);border-radius:20px;overflow:hidden}
+.sc{background:var(--bg2);padding:40px 24px;text-align:center;transition:background .3s,transform .3s}
+.sc:hover{background:var(--bg);transform:translateY(-4px)}
+.sn{font-size:52px;font-weight:800;letter-spacing:-.06em;line-height:1}
+.sl{font-size:13px;color:var(--text2);margin-top:8px}
+
+/* ── FEATURES ───────────────────────── */
+.sec{padding:128px 24px;display:flex;flex-direction:column;align-items:center;transition:background .3s}
+.si2{width:100%;max-width:1080px}
+.ey{font-size:14px;color:var(--blue);margin-bottom:12px}
+h2{font-size:clamp(36px,4.5vw,60px);font-weight:800;letter-spacing:-.05em;line-height:1.05}
+.sl2{font-size:clamp(17px,2vw,21px);color:var(--text2);letter-spacing:-.015em;line-height:1.47;max-width:560px;margin-top:16px}
+h3{font-size:21px;font-weight:600;letter-spacing:-.03em;margin-bottom:8px}
+.fg{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:64px}
+.fc{background:var(--card);border-radius:20px;padding:36px 28px;cursor:default;
+  transform-style:preserve-3d;transition:box-shadow .3s,background .3s;position:relative;overflow:hidden}
+.fc::after{content:'';position:absolute;inset:0;border-radius:20px;
+  background:radial-gradient(circle at var(--mx,50%) var(--my,50%),rgba(0,113,227,.1),transparent 60%);
+  opacity:0;transition:opacity .3s;pointer-events:none}
+.fc:hover::after{opacity:1}
+.fc:hover{box-shadow:0 20px 60px rgba(0,0,0,.1)}
+.fi{font-size:28px;margin-bottom:18px;display:block;transition:transform .3s;
+  color:var(--blue);line-height:1;font-style:normal}
+.fc:hover .fi{transform:scale(1.2) translateY(-3px)}
+.fc p{font-size:15px;color:var(--text2);line-height:1.55;margin-top:6px}
+
+/* ── ONBOARDING WIZARD ──────────────── */
+#wizard-sec{background:var(--bg2)}
+.wiz-wrap{max-width:820px;margin:0 auto;background:var(--bg);border-radius:28px;
+  overflow:hidden;box-shadow:0 24px 80px rgba(0,0,0,.1);margin-top:64px}
+.wiz-header{background:var(--blue);padding:20px 28px;display:flex;align-items:center;justify-content:space-between}
+.wiz-header h3{color:#fff;font-size:18px;letter-spacing:-.03em;margin:0}
+.wiz-steps{display:flex;gap:6px}
+.wiz-dot{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.35);transition:background .3s}
+.wiz-dot.on{background:#fff}
+.wiz-body{padding:0;position:relative;overflow:hidden}
+.wiz-screen{padding:32px 28px 0;
+  opacity:0;transform:translateX(32px);transition:opacity .4s,transform .4s;
+  pointer-events:none;display:none}
+.wiz-screen.active{opacity:1;transform:none;pointer-events:auto;display:block}
+.wiz-screen.exit{opacity:0;transform:translateX(-32px);display:none}
+.wiz-q{font-size:20px;font-weight:700;letter-spacing:-.04em;margin-bottom:6px}
+.wiz-sub{font-size:14px;color:var(--text2);margin-bottom:20px}
+.wiz-opts{display:flex;flex-direction:column;gap:8px}
+.wiz-opt{background:var(--card);border:2px solid transparent;border-radius:14px;
+  padding:12px 16px;cursor:pointer;text-align:left;font-family:var(--f);
+  font-size:15px;font-weight:500;color:var(--text);transition:border-color .2s,background .2s;
+  display:flex;align-items:center;gap:12px}
+.wiz-opt:hover{border-color:var(--blue);background:rgba(0,113,227,.04)}
+.wiz-opt.sel{border-color:var(--blue);background:rgba(0,113,227,.06)}
+.wiz-opt-ico{font-size:20px;flex-shrink:0}
+.wiz-inp{width:100%;background:var(--card);border:1.5px solid transparent;border-radius:12px;
+  padding:14px 16px;font-family:var(--f);font-size:15px;color:var(--text);outline:none;
+  transition:border-color .2s,box-shadow .2s}
+.wiz-inp:focus{border-color:var(--blue);box-shadow:0 0 0 4px rgba(0,113,227,.1)}
+.wiz-inp::placeholder{color:var(--text3)}
+.wiz-footer{display:flex;align-items:center;justify-content:space-between;
+  padding:20px 28px 28px;gap:16px;border-top:1px solid var(--sep);margin-top:20px}
+.wiz-back{background:none;border:none;font-family:var(--f);font-size:15px;
+  color:var(--text2);cursor:pointer;transition:color .2s}
+.wiz-back:hover{color:var(--text)}
+.wiz-next{background:var(--blue);color:#fff;border:none;border-radius:980px;
+  font-family:var(--f);font-size:15px;font-weight:500;padding:12px 28px;cursor:pointer;
+  transition:background .2s,transform .15s}
+.wiz-next:hover{background:var(--bh)}
+.wiz-next:disabled{opacity:.4;pointer-events:none}
+.wiz-result{text-align:center;padding:32px 28px}
+.wiz-result .big-ico{font-size:48px;display:block;margin-bottom:16px;animation:bounce .6s ease;
+  color:var(--green);font-weight:300;line-height:1}
+@keyframes bounce{0%,100%{transform:none}50%{transform:scale(1.2) rotate(-5deg)}}
+.wiz-result h3{font-size:24px;letter-spacing:-.04em;margin-bottom:10px}
+.wiz-result p{font-size:15px;color:var(--text2);max-width:400px;margin:0 auto 24px}
+.wiz-progress{height:4px;background:var(--bg3);border-radius:2px;overflow:hidden}
+.wiz-prog-fill{height:100%;background:var(--blue);border-radius:2px;transition:width .4s}
+
+/* ── SWIPE TESTIMONIALS ─────────────── */
+#testimonials{background:var(--bg)}
+.sw-wrap{position:relative;overflow:hidden;margin-top:64px;padding-bottom:48px}
+.sw-track{display:flex;gap:20px;transition:transform .4s cubic-bezier(.25,.46,.45,.94);user-select:none}
+.sw-card{min-width:340px;background:var(--card);border-radius:24px;padding:32px;
+  flex-shrink:0;transition:transform .2s,box-shadow .2s}
+.sw-card:hover{transform:translateY(-4px);box-shadow:0 20px 60px rgba(0,0,0,.1)}
+.sw-stars{color:var(--orange);font-size:16px;margin-bottom:14px;letter-spacing:2px}
+.sw-text{font-size:16px;color:var(--text);line-height:1.6;letter-spacing:-.015em;margin-bottom:20px;font-style:italic}
+.sw-author{display:flex;align-items:center;gap:12px}
+.sw-av{width:40px;height:40px;border-radius:50%;font-size:20px;background:var(--bg2);
+  display:flex;align-items:center;justify-content:center}
+.sw-name{font-size:14px;font-weight:600;letter-spacing:-.02em}
+.sw-role{font-size:12px;color:var(--text2)}
+.sw-nav{display:flex;justify-content:center;gap:12px;margin-top:8px;align-items:center}
+.sw-btn{width:40px;height:40px;border-radius:50%;background:var(--card);border:none;
+  cursor:none;font-size:16px;display:flex;align-items:center;justify-content:center;
+  transition:background .2s,transform .2s}
+.sw-btn:hover{background:var(--blue);color:#fff;transform:scale(1.1)}
+.sw-dots{display:flex;gap:6px}
+.sw-d{width:6px;height:6px;border-radius:50%;background:var(--bg3);transition:background .2s,width .2s}
+.sw-d.on{background:var(--blue);width:20px;border-radius:3px}
+
+/* ── TIMELINE ───────────────────────── */
+#tl-sec{background:var(--bg2)}
+.tl-box{background:var(--bg);border-radius:20px;padding:24px;margin-top:64px}
+.tl-ctrl{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px}
+.tl-title{font-size:15px;font-weight:600;letter-spacing:-.03em}
+.tl-leg{display:flex;gap:14px}
+.tl-li{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2)}
+.tl-ld{width:8px;height:8px;border-radius:2px;flex-shrink:0}
+.tl-g{overflow-x:auto;cursor:grab;padding-bottom:8px}
+.tl-g:active{cursor:grabbing}
+.tl-gh{display:flex;border-bottom:1px solid var(--sep);padding-bottom:8px;padding-left:100px;min-width:800px}
+.tl-hr{flex:1;font-size:10px;color:var(--text3);text-align:center;min-width:40px}
+.tl-rows{display:flex;flex-direction:column;gap:8px;padding-top:12px;min-width:800px}
+.tl-row{display:flex;align-items:center;height:36px}
+.tl-rn{width:100px;font-size:12px;font-weight:500;flex-shrink:0;display:flex;align-items:center;gap:6px;letter-spacing:-.02em}
+.tl-av{width:20px;height:20px;border-radius:50%;font-size:11px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.tl-tr{flex:1;height:100%;position:relative}
+.tlb{position:absolute;top:4px;height:28px;border-radius:8px;padding:0 9px;
+  display:flex;align-items:center;font-size:10px;font-weight:600;color:#fff;
+  cursor:grab;user-select:none;transition:box-shadow .2s,transform .1s;white-space:nowrap;overflow:hidden}
+.tlb:active{cursor:grabbing;transform:scaleY(1.1);box-shadow:0 8px 24px rgba(0,0,0,.2)}
+.tlb.drag{z-index:10;box-shadow:0 12px 32px rgba(0,0,0,.25);transform:scaleY(1.12)}
+.nl{position:absolute;top:0;bottom:0;width:2px;background:var(--red);pointer-events:none;z-index:5}
+.nl::before{content:'NU';position:absolute;top:-18px;left:50%;transform:translateX(-50%);
+  font-size:8px;font-weight:800;color:var(--red);letter-spacing:.06em;background:var(--bg);padding:1px 4px;border-radius:3px}
+
+/* ── LIVE DASHBOARD ─────────────────── */
+#dash{background:var(--bg)}
+.dg{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:64px}
+.dc{background:var(--card);border-radius:20px;padding:28px;transition:background .3s}
+.lv-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(52,199,89,.12);
+  color:var(--green);font-size:12px;font-weight:600;padding:4px 12px;border-radius:980px;margin-bottom:20px}
+.lv-d{width:7px;height:7px;border-radius:50%;background:var(--green);animation:pulse 2s infinite}
+.lvrow{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--sep)}
+.lvrow:last-child{border:none}
+.lv-av{width:36px;height:36px;border-radius:50%;font-size:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.lv-nm{font-size:14px;font-weight:500;letter-spacing:-.02em}
+.lv-t{font-size:11px;color:var(--text2)}
+.lv-bw{flex:1;height:4px;background:var(--bg3);border-radius:2px;overflow:hidden}
+.lv-bf{height:100%;border-radius:2px;background:var(--blue);width:0%;transition:width 1.5s cubic-bezier(.34,1.56,.64,1)}
+.lv-st{font-size:11px;font-weight:600;padding:3px 9px;border-radius:980px;flex-shrink:0}
+.si-in{background:rgba(52,199,89,.12);color:var(--green)}
+.si-br{background:rgba(255,149,0,.12);color:var(--orange)}
+.si-ou{background:rgba(174,174,178,.12);color:var(--text2)}
+
+/* Notif feed */
+.nfeed{display:flex;flex-direction:column;gap:10px;overflow:hidden}
+.nrow{display:flex;gap:12px;padding:12px;background:var(--bg);border-radius:14px;
+  transform:translateX(-20px);opacity:0;transition:transform .4s,opacity .4s;align-items:flex-start}
+.nrow.show{transform:none;opacity:1}
+.n-ico{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;flex-shrink:0}
+.n-ico.g{background:rgba(52,199,89,.12)}.n-ico.b{background:rgba(0,113,227,.12)}
+.n-ico.o{background:rgba(255,149,0,.12)}.n-ico.r{background:rgba(255,59,48,.12)}
+.n-ti{font-size:13px;font-weight:600;letter-spacing:-.02em}
+.n-su{font-size:11px;color:var(--text2);margin-top:1px}
+.n-tm{font-size:11px;color:var(--text3);margin-left:auto;flex-shrink:0;padding-top:2px}
+
+/* Hbars */
+.hbar-list{display:flex;flex-direction:column;gap:14px;margin-top:8px}
+.hbar{display:flex;flex-direction:column;gap:5px}
+.hbar-top{display:flex;justify-content:space-between;font-size:13px}
+.hbar-nm{font-weight:500}.hbar-vl{color:var(--text2)}
+.hbar-tr{height:6px;background:var(--bg3);border-radius:3px;overflow:hidden}
+.hbar-fi{height:100%;border-radius:3px;width:0%;transition:width 1.2s cubic-bezier(.34,1.56,.64,1)}
+
+/* FAQ */
+.faq-w{max-width:720px;margin:0 auto}
+details.fi{border-bottom:1px solid var(--sep)}
+details.fi:first-of-type{border-top:1px solid var(--sep)}
+summary.fq{font-size:17px;font-weight:500;color:var(--text);letter-spacing:-.02em;
+  cursor:none;list-style:none;padding:22px 0;display:flex;justify-content:space-between;
+  align-items:center;gap:16px;transition:color .2s}
+summary.fq::-webkit-details-marker{display:none}
+summary.fq:hover{color:var(--blue)}
+.fqi{width:22px;height:22px;border-radius:50%;background:var(--bg3);flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--text2);
+  transition:transform .3s,background .2s,color .2s}
+details[open] .fqi{transform:rotate(45deg);background:var(--blue);color:#fff}
+.fa{font-size:15px;color:var(--text2);line-height:1.6;padding-bottom:22px}
+
+/* CONTACT */
+.cgrid{display:grid;grid-template-columns:1fr 1.6fr;gap:64px;align-items:start}
+.cd{display:flex;align-items:center;gap:14px;padding:16px 0;border-bottom:1px solid var(--sep)}
+.cd:first-of-type{border-top:1px solid var(--sep)}
+.cd-i{width:38px;height:38px;border-radius:10px;background:var(--card);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.cd-l{font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--text3)}
+.cd-v{font-size:15px;color:var(--text)}
+.cform{display:flex;flex-direction:column;gap:12px}
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.fgrp{display:flex;flex-direction:column;gap:6px}
+label{font-size:13px;font-weight:500;color:var(--text2)}
+input,textarea,select{background:var(--card);border:1.5px solid transparent;border-radius:12px;
+  color:var(--text);font-family:var(--f);font-size:15px;padding:12px 16px;
+  outline:none;width:100%;transition:border-color .2s,background .3s,box-shadow .2s;-webkit-appearance:none}
+input:focus,textarea:focus,select:focus{border-color:var(--blue);background:var(--bg);box-shadow:0 0 0 4px rgba(0,113,227,.1)}
+input::placeholder,textarea::placeholder{color:var(--text3)}
+textarea{min-height:120px;resize:vertical}
+select option{background:var(--bg);color:var(--text)}
+.ff{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-top:4px}
+.fn{font-size:13px;color:var(--text2)}
+.fsucc{display:none;background:var(--card);border-radius:20px;padding:52px 36px;text-align:center}
+.fsucc.show{display:block;animation:fu .5s ease}
+.fsucc .ck{font-size:52px;display:block;margin-bottom:16px}
+.fsucc h3{font-size:26px;letter-spacing:-.04em;margin-bottom:8px}
+.fsucc p{font-size:15px;color:var(--text2)}
+
+footer{background:var(--bg2);border-top:1px solid var(--sep);padding:22px 24px;transition:background .3s}
+.fi2{max-width:1080px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:16px}
+.fc2{font-size:12px;color:var(--text2)}
+.fl{display:flex;gap:20px;list-style:none}
+.fl a{font-size:12px;color:var(--text2);text-decoration:none;transition:color .2s}
+.fl a:hover{color:var(--blue)}
+
+/* ── CONFETTI ───────────────────────── */
+.cf{position:fixed;pointer-events:none;z-index:99990;width:10px;height:10px;border-radius:2px;
+  animation:cffall 1s ease forwards}
+@keyframes cffall{
+  0%{transform:translateY(-10px) rotate(0deg);opacity:1}
+  100%{transform:translateY(100vh) rotate(720deg);opacity:0}
+}
+
+/* ── REVEAL ─────────────────────────── */
+.rv{opacity:0;transform:translateY(24px);transition:opacity .7s ease,transform .7s ease}
+.rv.in{opacity:1;transform:none}
+
+/* ── MOBILE ─────────────────────────── */
+/* ── FLOATING THEME BTN (mobile) ─────── */
+#floatTheme{display:none;position:fixed;top:12px;right:12px;z-index:10000;
+  background:var(--card);border:1px solid var(--sep);border-radius:50%;
+  width:38px;height:38px;font-size:16px;cursor:pointer;
+  align-items:center;justify-content:center;
+  box-shadow:0 2px 12px rgba(0,0,0,.12);transition:background .2s}
+
+@media(max-width:860px){
+  body{cursor:auto}
+  #C,#CR,#CLBL{display:none!important}
+  #pCanvas{display:none!important}
+  nav{display:none!important}
+  #floatTheme{display:flex}
+  .hero{padding-top:56px}
+  h1{font-size:clamp(32px,9vw,56px);letter-spacing:-.04em}
+  .fg,.dg{grid-template-columns:1fr}
+  /* Mobile seq: completely normal section, no sticky/scroll tricks */
+  #seq{height:auto!important}
+  .seq-sticky{position:relative!important;height:auto!important;
+    padding:40px 20px!important;overflow:visible!important}
+  .seq-inner{grid-template-columns:1fr!important;gap:0!important}
+  .seq-phone-col{display:flex!important;justify-content:center;margin-bottom:16px}
+  .seq-phone{display:block!important;width:180px!important;height:330px!important;
+    transform:none!important;box-shadow:0 20px 50px rgba(0,0,0,.12)!important}
+  .seq-phone::before{width:70px!important;height:18px!important}
+  .seq-frame{padding:28px 10px 10px!important}
+  .big-clk{font-size:26px!important}
+  .mini-punch{width:64px!important;height:64px!important}
+  .mini-punch span:first-child{font-size:18px!important}
+  #seqMobileNav{display:flex!important;margin-bottom:16px}
+  #seqTxt{padding:0!important}
+  #seqTxt .seq-txt h2{font-size:28px!important}
+  #seqTxt .seq-txt .sl2{font-size:15px!important}
+  #seqTxt .seq-txt{min-height:120px}
+  .cgrid{grid-template-columns:1fr}.frow{grid-template-columns:1fr}
+  .si{grid-template-columns:1fr 1fr}
+  .fi2{flex-direction:column;align-items:flex-start}
+  #shortcuts{display:none}
+}
+</style>
+</head>
+<body>
+
+<div id="C"></div><div id="CR"></div><div id="CLBL"></div>
+<div id="PROG"></div>
+<div id="toast">Ingepikt!</div>
+<div id="shortcuts">
+  <div id="sc-close">×</div>
+  <div><span class="kbd">Space</span> Prikken</div>
+  <div><span class="kbd">T</span> Thema wisselen</div>
+  <div><span class="kbd">S</span> Geluid aan/uit</div>
+  <div><span class="kbd">?</span> Shortcuts sluiten</div>
+</div>
+
+<nav>
+  <div class="nv">
+    <a href="#" class="nl">Prikklok</a>
+    <ul class="nlinks">
+      <li><a href="#features">Functies</a></li>
+      <li><a href="#seq">Demo</a></li>
+      <li><a href="#wizard-sec">Onboarding</a></li>
+      <li><a href="#contact" class="npill">Demo aanvragen</a></li>
+    </ul>
+    <div class="nav-right">
+      <button class="icobtn" id="soundBtn" title="Geluid (S)">♩</button>
+      <button class="icobtn" id="themeBtn" title="Thema (T)">◑</button>
+    </div>
+  </div>
+</nav>
+
+<!-- Floating dark mode button - mobile only -->
+<button id="floatTheme" aria-label="Wissel thema">◑</button>
+
+<main>
+
+<!-- ═══ HERO ═══ -->
+<section class="hero" id="hero">
+  <canvas id="pCanvas"></canvas>
+  <div class="hero-c">
+    <h1 id="H1"><span class="ch on" style="transition:none">Elk werkuur. Precies bijgehouden.</span></h1>
+    <p class="hsub">Prikklok digitaliseert uw werkuren. Medewerkers inchecken in één tik, overzichten real-time, rapporten exporteren wanneer u wilt.</p>
+    <div class="hbtns">
+      <div class="mag"><a href="#seq" class="btn bp" id="bp">App verkennen</a></div>
+      <div class="mag"><a href="#wizard-sec" class="btn bs" id="bs">Gratis starten</a></div>
+    </div>
+  </div>
+  <div class="ph-wrap">
+    <div class="ph" id="heroPh">
+      <div class="ph-scr">
+        <div class="ptime-n" id="pt">--:--</div>
+        <div class="ptime-d" id="pd">—</div>
+        <div class="pbtn-wrap">
+          <button class="pbtn" id="mainPunch">
+            <span class="pbtn-i" id="mpi">↑</span>
+            <span class="pbtn-l" id="mpl">Inprikken</span>
+          </button>
+        </div>
+        <div class="pstats">
+          <div class="pst"><div class="pst-n" id="mpt">0:00</div><div class="pst-l">Vandaag</div></div>
+          <div class="pst"><div class="pst-n" id="mpw">0:00</div><div class="pst-l">Week</div></div>
+        </div>
+        <div class="pnote" id="pnote">Druk <b>Space</b> of klik om te prikken</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ STATS ═══ -->
+<div class="stats">
+  <div class="si">
+    <div class="sc rv"><div class="sn" data-count="100" data-sfx="%">0</div><div class="sl">Papierloos</div></div>
+    <div class="sc rv"><div class="sn" data-count="2">0</div><div class="sl">Platformen</div></div>
+    <div class="sc rv"><div class="sn" data-count="5" data-sfx="min">0</div><div class="sl">Tot eerste prik</div></div>
+    <div class="sc rv"><div class="sn">GDPR</div><div class="sl">Conform</div></div>
+  </div>
+</div>
+
+<!-- ═══ FEATURES ═══ -->
+<section class="sec" id="features">
+  <div class="si2">
+    <div style="text-align:center;margin-bottom:64px" class="rv">
+      <p class="ey">Functies</p>
+      <h2>Gebouwd om te werken.</h2>
+      <p class="sl2" style="margin:16px auto 0">Alles wat u nodig heeft — niets meer, niets minder.</p>
+    </div>
+    <div class="fg">
+      <div class="fc rv"><span class="fi">◷</span><h3>In- &amp; uitprikken</h3><p>Eén tik. Exacte tijd en locatie automatisch vastgelegd.</p></div>
+      <div class="fc rv"><span class="fi">▦</span><h3>Live rapporten</h3><p>Dag-, week- en maandoverzichten. Export naar Excel of PDF.</p></div>
+      <div class="fc rv"><span class="fi">◎</span><h3>Teambeheer</h3><p>Rollen, aanwezigheid en shifts live inzichtelijk.</p></div>
+      <div class="fc rv"><span class="fi">◈</span><h3>Slimme alerts</h3><p>Meldingen bij vergeten uitprikken, overuren en afwijkingen.</p></div>
+      <div class="fc rv"><span class="fi">⊕</span><h3>GPS-registratie</h3><p>Locatieverificatie per werkplek voor buitendienst.</p></div>
+      <div class="fc rv"><span class="fi">◫</span><h3>GDPR &amp; security</h3><p>End-to-end versleuteld op Europese servers.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SCROLL SEQUENCE ═══ -->
+<section id="seq">
+  <div class="seq-sticky">
+    <div class="seq-inner">
+      <div class="seq-phone-col">
+        <div id="seq-phone-wrap">
+          <div class="seq-phone" id="seqPh">
+            <!-- Frame 0: punch -->
+            <div class="seq-frame active" id="sf0">
+              <div class="sframe-title">Tijdregistratie</div>
+              <div class="big-clk" id="sqT">--:--</div>
+              <div class="clk-sub" id="sqD">—</div>
+              <div style="display:flex;justify-content:center;margin-top:8px">
+                <button class="mini-punch" id="sqPunch">
+                  <span id="sqpi">↑</span>
+                  <span id="sqpl">Inprikken</span>
+                </button>
+              </div>
+              <div class="pstats" style="margin-top:8px">
+                <div class="pst"><div class="pst-n" id="sqtd">0:00</div><div class="pst-l">Vandaag</div></div>
+                <div class="pst"><div class="pst-n" id="sqwk">0:00</div><div class="pst-l">Week</div></div>
+              </div>
+            </div>
+            <!-- Frame 1: team -->
+            <div class="seq-frame" id="sf1">
+              <div class="sframe-title">Teamoverzicht</div>
+              <h3 style="font-size:16px;margin-bottom:10px">3 van 5 aanwezig</h3>
+              <div style="display:flex;flex-direction:column;gap:7px">
+                <div class="lvrow" style="padding:7px 0"><div class="lv-av" style="background:rgba(0,113,227,.1);color:var(--blue);font-size:11px;font-weight:700">LV</div><div><div class="lv-nm">Lisa V.</div><div class="lv-t">08:12</div></div><div class="lv-st si-in" style="margin-left:auto">✓</div></div>
+                <div class="lvrow" style="padding:7px 0"><div class="lv-av" style="background:rgba(255,149,0,.1);color:var(--orange);font-size:11px;font-weight:700">TD</div><div><div class="lv-nm">Tom D.</div><div class="lv-t">Pauze</div></div><div class="lv-st si-br" style="margin-left:auto">—</div></div>
+                <div class="lvrow" style="padding:7px 0"><div class="lv-av" style="background:rgba(0,113,227,.1);color:var(--blue);font-size:11px;font-weight:700">SK</div><div><div class="lv-nm">Sara K.</div><div class="lv-t">09:00</div></div><div class="lv-st si-in" style="margin-left:auto">✓</div></div>
+                <div class="lvrow" style="padding:7px 0;border:none"><div class="lv-av" style="background:rgba(174,174,178,.1);color:var(--text3);font-size:11px;font-weight:700">ER</div><div><div class="lv-nm">Emma R.</div><div class="lv-t">Afwezig</div></div><div class="lv-st si-ou" style="margin-left:auto">–</div></div>
+              </div>
+            </div>
+            <!-- Frame 2: chart -->
+            <div class="seq-frame" id="sf2">
+              <div class="sframe-title">Uren deze week</div>
+              <div style="font-size:28px;font-weight:800;letter-spacing:-.05em">32:45</div>
+              <div style="font-size:10px;color:var(--text2);margin-bottom:12px">van 40:00 doel</div>
+              <div class="seq-chart">
+                <div class="sc-bar" style="height:75%"></div>
+                <div class="sc-bar" style="height:88%"></div>
+                <div class="sc-bar" style="height:60%"></div>
+                <div class="sc-bar" style="height:82%"></div>
+                <div class="sc-bar today" style="height:48%"></div>
+                <div class="sc-bar" style="height:8%;opacity:.25"></div>
+                <div class="sc-bar" style="height:8%;opacity:.25"></div>
+              </div>
+              <div style="display:flex;gap:5px;margin-top:4px">
+                <span style="flex:1;font-size:8px;color:var(--text3);text-align:center">Ma</span>
+                <span style="flex:1;font-size:8px;color:var(--text3);text-align:center">Di</span>
+                <span style="flex:1;font-size:8px;color:var(--text3);text-align:center">Wo</span>
+                <span style="flex:1;font-size:8px;color:var(--text3);text-align:center">Do</span>
+                <span style="flex:1;font-size:8px;color:var(--text3);text-align:center;color:var(--blue);font-weight:700">Vr</span>
+                <span style="flex:1;font-size:8px;color:var(--text3);text-align:center">Za</span>
+                <span style="flex:1;font-size:8px;color:var(--text3);text-align:center">Zo</span>
+              </div>
+            </div>
+            <!-- Frame 3: notifs -->
+            <div class="seq-frame" id="sf3">
+              <div class="sframe-title">Meldingen</div>
+              <div style="display:flex;flex-direction:column;gap:8px">
+                <div class="seq-notif"><div class="sn-ico" style="background:rgba(52,199,89,.12);font-size:14px;font-weight:700;color:var(--green)">↑</div><div><div class="sn-t">Lisa V. ingepikt</div><div class="sn-s">Vandaag 08:12</div></div></div>
+                <div class="seq-notif"><div class="sn-ico" style="background:rgba(255,59,48,.12);font-size:14px;font-weight:700;color:var(--red)">!</div><div><div class="sn-t">Emma vergeet uitprikken</div><div class="sn-s">Reminder verstuurd</div></div></div>
+                <div class="seq-notif"><div class="sn-ico" style="background:rgba(0,113,227,.12);font-size:14px;font-weight:700;color:var(--blue)">≡</div><div><div class="sn-t">Weekrapport klaar</div><div class="sn-s">Oktober week 43</div></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Text side -->
+      <div id="seqTxt" style="min-height:200px">
+        <!-- Mobile dot nav -->
+        <div id="seqMobileNav" style="display:none;justify-content:center;gap:8px;margin-bottom:20px">
+          <button onclick="setSeqFrame(0);autoSeqIdx=0" class="seq-mob-dot on" id="smd0"></button>
+          <button onclick="setSeqFrame(1);autoSeqIdx=1" class="seq-mob-dot" id="smd1"></button>
+          <button onclick="setSeqFrame(2);autoSeqIdx=2" class="seq-mob-dot" id="smd2"></button>
+          <button onclick="setSeqFrame(3);autoSeqIdx=3" class="seq-mob-dot" id="smd3"></button>
+        </div>
+        <div class="seq-txt" id="st0">
+          <p class="ey">Demo — stap 1 van 4</p>
+          <h2>Tijdregistratie.<br/>In één tik.</h2>
+          <p class="sl2">Klik de knop of druk <kbd style="background:var(--bg3);padding:2px 7px;border-radius:5px;font-size:14px">Space</kbd> om in te prikken. De app registreert alles automatisch.</p>
+        </div>
+        <div class="seq-txt hidden" id="st1">
+          <p class="ey">Demo — stap 2 van 4</p>
+          <h2>Uw team.<br/>In real-time.</h2>
+          <p class="sl2">Zie wie aanwezig is, wie pauze heeft en wie al vertrokken is — altijd up-to-date.</p>
+        </div>
+        <div class="seq-txt hidden" id="st2">
+          <p class="ey">Demo — stap 3 van 4</p>
+          <h2>Uren &amp;<br/>analytics.</h2>
+          <p class="sl2">Visueel wekelijks overzicht per medewerker. Vergelijk met doelstellingen in één oogopslag.</p>
+        </div>
+        <div class="seq-txt hidden" id="st3">
+          <p class="ey">Demo — stap 4 van 4</p>
+          <h2>Meldingen<br/>die werken.</h2>
+          <p class="sl2">Automatische alerts bij vergeten uitprikken, overuren en teamwijzigingen.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ ONBOARDING WIZARD ═══ -->
+<section class="sec" id="wizard-sec" style="background:var(--bg2)">
+  <div class="si2">
+    <div style="text-align:center" class="rv">
+      <p class="ey">Onboarding</p>
+      <h2>Start in 4 stappen.</h2>
+      <p class="sl2" style="margin:16px auto 0">Probeer de echte onboardingervaring van Prikklok.</p>
+    </div>
+    <div class="wiz-wrap rv">
+      <div class="wiz-progress"><div class="wiz-prog-fill" id="wizProg" style="width:25%"></div></div>
+      <div class="wiz-header">
+        <h3 id="wizTitle">Welkom bij Prikklok</h3>
+        <div class="wiz-steps">
+          <div class="wiz-dot on" id="wd0"></div>
+          <div class="wiz-dot" id="wd1"></div>
+          <div class="wiz-dot" id="wd2"></div>
+          <div class="wiz-dot" id="wd3"></div>
+        </div>
+      </div>
+      <div class="wiz-body">
+        <!-- Step 0 -->
+        <div class="wiz-screen active" id="ws0">
+          <div class="wiz-q">Hoe groot is uw team?</div>
+          <div class="wiz-sub">We passen de app-instellingen aan op uw situatie.</div>
+          <div class="wiz-opts">
+            <button class="wiz-opt" data-val="1-5"><span class="wiz-opt-ico">·</span>1–5 medewerkers</button>
+            <button class="wiz-opt" data-val="6-25"><span class="wiz-opt-ico">··</span>6–25 medewerkers</button>
+            <button class="wiz-opt" data-val="26-100"><span class="wiz-opt-ico">···</span>26–100 medewerkers</button>
+            <button class="wiz-opt" data-val="100+"><span class="wiz-opt-ico">+</span>Meer dan 100</button>
+          </div>
+        </div>
+        <!-- Step 1 -->
+        <div class="wiz-screen" id="ws1">
+          <div class="wiz-q">Wat is uw sector?</div>
+          <div class="wiz-sub">Zo kunnen we relevante functies activeren.</div>
+          <div class="wiz-opts">
+            <button class="wiz-opt" data-val="bouw"><span class="wiz-opt-ico">◧</span>Bouw &amp; constructie</button>
+            <button class="wiz-opt" data-val="horeca"><span class="wiz-opt-ico">◨</span>Horeca &amp; retail</button>
+            <button class="wiz-opt" data-val="zorg"><span class="wiz-opt-ico">◩</span>Zorg &amp; welzijn</button>
+            <button class="wiz-opt" data-val="kantoor"><span class="wiz-opt-ico">◪</span>Kantoor &amp; diensten</button>
+          </div>
+        </div>
+        <!-- Step 2 -->
+        <div class="wiz-screen" id="ws2">
+          <div class="wiz-q">Uw bedrijfsnaam?</div>
+          <div class="wiz-sub">We maken uw persoonlijk dashboard klaar.</div>
+          <input class="wiz-inp" id="wizComp" type="text" placeholder="bv. Bakkerij Snijkers" autocomplete="organization"/>
+        </div>
+        <!-- Step 3 -->
+        <div class="wiz-screen" id="ws3">
+          <div class="wiz-q">Uw e-mailadres?</div>
+          <div class="wiz-sub">Voor uw gratis demo-account (geen spam).</div>
+          <input class="wiz-inp" id="wizEmail" type="email" placeholder="u@bedrijf.be" autocomplete="email"/>
+        </div>
+        <!-- Step 4: result -->
+        <div class="wiz-screen" id="ws4">
+          <div class="wiz-result">
+            <span class="big-ico" id="wizIco">✓</span>
+            <h3 id="wizDone">Klaar, <span id="wizName">!</span></h3>
+            <p id="wizMsg">Uw demo-omgeving wordt aangemaakt. U ontvangt een e-mail met uw inloggegevens.</p>
+            <div class="mag" style="display:inline-block">
+              <a href="#contact" class="btn bp">Demo bevestigen</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="wiz-footer">
+        <button class="wiz-back" id="wizBack">← Terug</button>
+        <button class="wiz-next" id="wizNext" disabled>Volgende →</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ TESTIMONIALS ═══ -->
+<!-- ═══ TIMELINE ═══ -->
+<section class="sec" id="tl-sec" style="background:var(--bg2)">
+  <div class="si2">
+    <div class="rv" style="text-align:center">
+      <p class="ey">Shiftenplanning</p>
+      <h2>Versleep en plan.</h2>
+      <p class="sl2" style="margin:16px auto 0">Sleep de blokken om shifts aan te passen.</p>
+    </div>
+    <div class="tl-box rv">
+      <div class="tl-ctrl">
+        <div class="tl-title" id="tlDate2">—</div>
+        <div class="tl-leg">
+          <div class="tl-li"><div class="tl-ld" style="background:#0071e3"></div>Shift</div>
+          <div class="tl-li"><div class="tl-ld" style="background:#34c759"></div>Pauze</div>
+          <div class="tl-li"><div class="tl-ld" style="background:#ff3b30"></div>Nu</div>
+        </div>
+      </div>
+      <div class="tl-g" id="tlG"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ DASHBOARD ═══ -->
+<section class="sec" id="dash">
+  <div class="si2">
+    <div style="text-align:center;margin-bottom:64px" class="rv">
+      <p class="ey">Live dashboard</p>
+      <h2>Alles in real-time.</h2>
+    </div>
+    <div class="dg">
+      <div class="dc rv">
+        <div class="lv-badge"><span class="lv-d"></span> Live · Nu</div>
+        <div id="lvList"></div>
+      </div>
+      <div class="dc rv">
+        <h3 style="margin-bottom:16px">Activiteitenfeed</h3>
+        <div class="nfeed" id="nFeed"></div>
+      </div>
+      <div class="dc rv">
+        <h3 style="margin-bottom:4px">Uren deze week</h3>
+        <div class="hbar-list" id="hbList"></div>
+      </div>
+      <div class="dc rv" style="display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:40px 28px">
+        <svg width="140" height="140" viewBox="0 0 140 140">
+          <circle cx="70" cy="70" r="56" fill="none" stroke="var(--bg3)" stroke-width="18"/>
+          <circle cx="70" cy="70" r="56" fill="none" stroke="var(--green)" stroke-width="18"
+            stroke-dasharray="211 141" stroke-dashoffset="-88" stroke-linecap="round" id="doIn"
+            style="transition:stroke-dasharray 1.5s cubic-bezier(.34,1.56,.64,1)"/>
+          <circle cx="70" cy="70" r="56" fill="none" stroke="var(--orange)" stroke-width="18"
+            stroke-dasharray="53 299" stroke-dashoffset="-88" stroke-linecap="round" opacity=".7" id="doBreak"
+            style="transition:stroke-dasharray 1.5s cubic-bezier(.34,1.56,.64,1) .1s"/>
+          <text x="70" y="64" text-anchor="middle" font-size="24" font-weight="800" fill="var(--text)" font-family="var(--f)">3/5</text>
+          <text x="70" y="82" text-anchor="middle" font-size="12" fill="var(--text2)" font-family="var(--f)">aanwezig</text>
+        </svg>
+        <div style="display:flex;flex-direction:column;gap:10px;margin-top:20px;text-align:left;width:100%">
+          <div style="display:flex;align-items:center;gap:10px;font-size:14px"><div style="width:10px;height:10px;border-radius:50%;background:var(--green);flex-shrink:0"></div>Aanwezig<div style="font-size:18px;font-weight:700;letter-spacing:-.04em;margin-left:auto">60%</div></div>
+          <div style="display:flex;align-items:center;gap:10px;font-size:14px"><div style="width:10px;height:10px;border-radius:50%;background:var(--orange);flex-shrink:0"></div>Pauze<div style="font-size:18px;font-weight:700;letter-spacing:-.04em;margin-left:auto">20%</div></div>
+          <div style="display:flex;align-items:center;gap:10px;font-size:14px"><div style="width:10px;height:10px;border-radius:50%;background:var(--bg3);flex-shrink:0"></div>Afwezig<div style="font-size:18px;font-weight:700;letter-spacing:-.04em;margin-left:auto">20%</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ FAQ ═══ -->
+<section class="sec" id="faq" style="background:var(--bg2)">
+  <div class="si2" style="max-width:720px">
+    <div style="text-align:center;margin-bottom:56px" class="rv"><p class="ey">FAQ</p><h2>Vragen?</h2></div>
+    <div class="faq-w rv">
+      <details class="fi" open><summary class="fq">Op welke toestellen werkt Prikklok?<span class="fqi">+</span></summary><p class="fa">iOS 14+ en Android 8.0+. Gebouwd met Flutter voor identieke prestaties op beide platformen.</p></details>
+      <details class="fi"><summary class="fq">Is Prikklok GDPR-conform?<span class="fqi">+</span></summary><p class="fa">Ja. Data versleuteld opgeslagen op Europese servers, volledig conform de AVG/GDPR-wetgeving.</p></details>
+      <details class="fi"><summary class="fq">Hoe snel kan ik van start?<span class="fqi">+</span></summary><p class="fa">Minder dan vijf minuten: download, registreer, voeg medewerkers toe, begin prikken.</p></details>
+      <details class="fi"><summary class="fq">Kan ik exporteren naar mijn boekhouder?<span class="fqi">+</span></summary><p class="fa">Ja — Excel, PDF en CSV. Dag-, week- en maandrapportages met één klik.</p></details>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ CONTACT ═══ -->
+<section class="sec" id="contact">
+  <div class="si2">
+    <div style="text-align:center;margin-bottom:80px" class="rv"><p class="ey">Contact</p><h2>Neem contact op.</h2></div>
+    <div class="cgrid">
+      <div class="rv">
+        <div class="cd"><div class="cd-i" style="font-size:13px;font-weight:700;color:var(--blue)">@</div><div><div class="cd-l">E-mail</div><div class="cd-v"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="10797e767f506062797b7b7c7f7b3e7275">[email&#160;protected]</a></div></div></div>
+        <div class="cd"><div class="cd-i" style="font-size:13px;font-weight:700;color:var(--blue)">#</div><div><div class="cd-l">Telefoon</div><div class="cd-v">+32 (0)11 000 000</div></div></div>
+        <div class="cd"><div class="cd-i" style="font-size:13px;font-weight:700;color:var(--blue)">◎</div><div><div class="cd-l">Adres</div><div class="cd-v">Zutendaal, België</div></div></div>
+      </div>
+      <div class="rv">
+        <form class="cform" id="cForm" novalidate>
+          <div class="frow">
+            <div class="fgrp"><label for="nm">Naam</label><input type="text" id="nm" placeholder="Jan Janssen" required autocomplete="name"/></div>
+            <div class="fgrp"><label for="co">Bedrijf</label><input type="text" id="co" placeholder="Bedrijfsnaam" autocomplete="organization"/></div>
+          </div>
+          <div class="frow">
+            <div class="fgrp"><label for="em">E-mail</label><input type="email" id="em" placeholder="jan@bedrijf.be" required autocomplete="email"/></div>
+            <div class="fgrp"><label for="ph">Telefoon</label><input type="tel" id="ph" placeholder="+32 ..." autocomplete="tel"/></div>
+          </div>
+          <div class="fgrp"><label for="su">Onderwerp</label>
+            <select id="su" required>
+              <option value="">Selecteer</option>
+              <option value="demo">Demo inplannen</option>
+              <option value="info">Meer informatie</option>
+              <option value="pricing">Prijsofferte</option>
+              <option value="support">Ondersteuning</option>
+            </select>
+          </div>
+          <div class="fgrp"><label for="ms">Bericht</label><textarea id="ms" placeholder="Hoe kunnen we u helpen?" required></textarea></div>
+          <div class="ff">
+            <span class="fn">Reactie binnen 1 werkdag.</span>
+            <div class="mag"><button type="submit" class="btn bp" id="subBtn">Verzend bericht</button></div>
+          </div>
+        </form>
+        <div class="fsucc" id="fSucc"><span class="ck" style="font-size:32px;color:var(--green)">✓</span><h3>Bericht ontvangen.</h3><p>We nemen zo snel mogelijk contact op.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="fi2">
+    <span class="fc2">© 2025 Prikklok · <a href="https://prikklok.one" style="color:inherit;text-decoration:none">prikklok.one</a></span>
+    <ul class="fl"><li><a href="#">Privacy</a></li><li><a href="#">Voorwaarden</a></li><li><a href="#contact">Contact</a></li></ul>
+  </div>
+</footer>
+
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+'use strict';
+// ── THEME ─────────────────────────────────────────────────────
+const H=document.documentElement,tb=document.getElementById('themeBtn'),ftb=document.getElementById('floatTheme');
+function applyTheme(dark){
+  H.classList.toggle('dark',dark);
+  const ico=dark?'●':'◑';
+  if(tb)tb.textContent=ico;
+  if(ftb)ftb.textContent=ico;
+  localStorage.setItem('pk-theme',dark?'dark':'light');
+}
+if(localStorage.getItem('pk-theme')==='dark')applyTheme(true);
+function toggleTheme(){applyTheme(!H.classList.contains('dark'))}
+if(tb)tb.addEventListener('click',toggleTheme);
+if(ftb)ftb.addEventListener('click',toggleTheme);
+
+// ── AUDIO ENGINE ──────────────────────────────────────────────
+let audioCtx=null,soundOn=false;
+const sb=document.getElementById('soundBtn');
+
+function getAudio(){if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();return audioCtx}
+
+function playPunch(success=true){
+  if(!soundOn)return;
+  const ac=getAudio();
+  const o=ac.createOscillator(),g=ac.createGain();
+  o.connect(g);g.connect(ac.destination);
+  if(success){
+    o.frequency.setValueAtTime(440,ac.currentTime);
+    o.frequency.exponentialRampToValueAtTime(880,ac.currentTime+.08);
+    g.gain.setValueAtTime(.3,ac.currentTime);
+    g.gain.exponentialRampToValueAtTime(.001,ac.currentTime+.25);
+  } else {
+    o.frequency.setValueAtTime(220,ac.currentTime);
+    o.frequency.exponentialRampToValueAtTime(110,ac.currentTime+.12);
+    g.gain.setValueAtTime(.2,ac.currentTime);
+    g.gain.exponentialRampToValueAtTime(.001,ac.currentTime+.3);
+  }
+  o.start(ac.currentTime);o.stop(ac.currentTime+.3);
+}
+
+function playClick(){
+  if(!soundOn)return;
+  const ac=getAudio();
+  const o=ac.createOscillator(),g=ac.createGain();
+  o.connect(g);g.connect(ac.destination);
+  o.frequency.value=1200;
+  g.gain.setValueAtTime(.05,ac.currentTime);
+  g.gain.exponentialRampToValueAtTime(.001,ac.currentTime+.08);
+  o.start();o.stop(ac.currentTime+.08);
+}
+
+function playHover(){
+  if(!soundOn)return;
+  const ac=getAudio();
+  const o=ac.createOscillator(),g=ac.createGain();
+  o.type='sine';o.connect(g);g.connect(ac.destination);
+  o.frequency.value=800;
+  g.gain.setValueAtTime(.02,ac.currentTime);
+  g.gain.exponentialRampToValueAtTime(.001,ac.currentTime+.06);
+  o.start();o.stop(ac.currentTime+.06);
+}
+
+sb.addEventListener('click',()=>{
+  soundOn=!soundOn;
+  sb.textContent=soundOn?'♪':'♩';
+  sb.classList.toggle('active',soundOn);
+  if(soundOn){getAudio();playClick();showToast('Geluid ingeschakeld')}
+  else showToast('Geluid uitgeschakeld');
+  sb.textContent=soundOn?'♪':'♩';
+});
+
+// ── PROGRESS ──────────────────────────────────────────────────
+const prog=document.getElementById('PROG');
+window.addEventListener('scroll',()=>{prog.style.width=(window.scrollY/(document.body.scrollHeight-window.innerHeight)*100)+'%'},{passive:true});
+
+// ── TOAST ─────────────────────────────────────────────────────
+const toast=document.getElementById('toast');let toastT;
+function showToast(msg,dur=2200){
+  toast.textContent=msg;toast.classList.add('show');
+  clearTimeout(toastT);toastT=setTimeout(()=>toast.classList.remove('show'),dur);
+}
+
+// ── CURSOR ────────────────────────────────────────────────────
+const cur=document.getElementById('C'),ring=document.getElementById('CR'),clbl=document.getElementById('CLBL');
+let mx=0,my=0,rx=0,ry=0;
+let curVisible=false;
+document.addEventListener('mousemove',e=>{
+  mx=e.clientX;my=e.clientY;
+  cur.style.left=mx+'px';cur.style.top=my+'px';
+  clbl.style.left=mx+'px';clbl.style.top=my+'px';
+  if(!curVisible){curVisible=true;cur.style.opacity='1';ring.style.opacity='1'}
+});
+(function ar(){rx+=(mx-rx)*.1;ry+=(my-ry)*.1;ring.style.left=rx+'px';ring.style.top=ry+'px';requestAnimationFrame(ar)})();
+document.addEventListener('mousedown',()=>cur.classList.add('sq'));
+document.addEventListener('mouseup',()=>cur.classList.remove('sq'));
+function setLbl(t){clbl.textContent=t;clbl.style.opacity=t?'1':'0'}
+document.querySelectorAll('a,button,.fc,.wiz-opt').forEach(el=>{
+  el.addEventListener('mouseenter',()=>{cur.classList.add('big');ring.classList.add('big');if(soundOn)playHover()});
+  el.addEventListener('mouseleave',()=>{cur.classList.remove('big');ring.classList.remove('big');setLbl('')});
+});
+document.querySelectorAll('.tlb').forEach(el=>{el.addEventListener('mouseenter',()=>setLbl('Sleep'));el.addEventListener('mouseleave',()=>setLbl(''))});
+
+// ── MAGNETIC ──────────────────────────────────────────────────
+document.querySelectorAll('.mag').forEach(w=>{
+  const b=w.querySelector('a,button');if(!b)return;
+  w.addEventListener('mousemove',e=>{const r=w.getBoundingClientRect();b.style.transform=`translate(${(e.clientX-r.left-r.width/2)*.38}px,${(e.clientY-r.top-r.height/2)*.38}px)`});
+  w.addEventListener('mouseleave',()=>b.style.transform='');
+});
+
+// ── RIPPLE ────────────────────────────────────────────────────
+document.querySelectorAll('.btn,.pbtn,.wiz-next,.wiz-back,.wiz-opt').forEach(b=>{
+  b.addEventListener('click',()=>{b.classList.remove('rip');void b.offsetWidth;b.classList.add('rip');playClick()});
+});
+
+// ── PARTICLE CANVAS ───────────────────────────────────────────
+const cv=document.getElementById('pCanvas'),cx=cv.getContext('2d');
+let W,He,parts=[];
+function rsz(){W=cv.width=cv.offsetWidth;He=cv.height=cv.offsetHeight}
+rsz();window.addEventListener('resize',rsz);
+class P{
+  constructor(){this.rst()}
+  rst(){this.x=Math.random()*W;this.y=Math.random()*He;this.r=Math.random()*2+.4;
+    this.vx=(Math.random()-.5)*.4;this.vy=(Math.random()-.5)*.4;this.a=Math.random()*.4+.08}
+  upd(ex,ey){
+    const dx=this.x-ex,dy=this.y-ey,d=Math.sqrt(dx*dx+dy*dy);
+    if(d<140){const f=((140-d)/140)*1.5;this.x+=dx/d*f;this.y+=dy/d*f}
+    this.x+=this.vx;this.y+=this.vy;
+    if(this.x<0||this.x>W)this.vx*=-1;if(this.y<0||this.y>He)this.vy*=-1;
+    cx.beginPath();cx.arc(this.x,this.y,this.r,0,Math.PI*2);
+    cx.fillStyle=`rgba(0,113,227,${this.a})`;cx.fill();
+  }
+}
+for(let i=0;i<90;i++)parts.push(new P());
+let emx=W/2,emy=He/2;
+document.getElementById('hero').addEventListener('mousemove',e=>{emx=e.clientX;emy=e.clientY});
+function drwLines(){
+  for(let i=0;i<parts.length;i++)for(let j=i+1;j<parts.length;j++){
+    const dx=parts[i].x-parts[j].x,dy=parts[i].y-parts[j].y,d=Math.sqrt(dx*dx+dy*dy);
+    if(d<110){cx.beginPath();cx.moveTo(parts[i].x,parts[i].y);cx.lineTo(parts[j].x,parts[j].y);
+      cx.strokeStyle=`rgba(0,113,227,${(1-d/110)*.12})`;cx.lineWidth=.6;cx.stroke()}
+  }
+}
+(function ap(){cx.clearRect(0,0,W,He);drwLines();parts.forEach(p=>p.upd(emx,emy));requestAnimationFrame(ap)})();
+
+// ── SPLIT TITLE ───────────────────────────────────────────────
+const h1=document.getElementById('H1');
+h1.innerHTML=''; // clear static SEO text, animate fresh
+'Elk werkuur.\nPrecies bijgehouden.'.split('').forEach((c,i)=>{
+  if(c==='\n'){h1.appendChild(document.createElement('br'));return}
+  const s=document.createElement('span');s.className='ch';s.textContent=c===' '?'\u00a0':c;
+  s.style.transitionDelay=(i*.016+.3)+'s';h1.appendChild(s);
+});
+setTimeout(()=>h1.querySelectorAll('.ch').forEach(s=>s.classList.add('on')),50);
+
+// ── CLOCK ─────────────────────────────────────────────────────
+const DAYS=['Zondag','Maandag','Dinsdag','Woensdag','Donderdag','Vrijdag','Zaterdag'];
+const MON=['jan','feb','mrt','apr','mei','jun','jul','aug','sep','okt','nov','dec'];
+function p2(n){return String(n).padStart(2,'0')}
+function fmtH(s){return`${Math.floor(s/3600)}:${p2(Math.floor((s%3600)/60))}`}
+function tick(){
+  const n=new Date();
+  const ts=`${p2(n.getHours())}:${p2(n.getMinutes())}`;
+  const ds=`${DAYS[n.getDay()]} ${n.getDate()} ${MON[n.getMonth()]}`;
+  ['pt','sqT'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=ts});
+  ['pd','sqD'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=ds});
+}
+tick();setInterval(tick,1000);
+
+// ── CONFETTI ──────────────────────────────────────────────────
+const COLORS=['#0071e3','#34c759','#ff9500','#ff3b30','#bf5af2','#ffd60a','#30d158'];
+function burst(x,y,count=60){
+  for(let i=0;i<count;i++){
+    const el=document.createElement('div');el.className='cf';
+    const angle=Math.random()*360,dist=80+Math.random()*200;
+    const tx=Math.cos(angle*Math.PI/180)*dist,ty=Math.sin(angle*Math.PI/180)*dist-100;
+    el.style.cssText=`left:${x}px;top:${y}px;background:${COLORS[Math.floor(Math.random()*COLORS.length)]};
+      width:${6+Math.random()*6}px;height:${6+Math.random()*6}px;
+      animation:cffall ${.6+Math.random()*.8}s ease ${Math.random()*.3}s forwards;
+      transform:translate(${tx}px,${ty}px)`;
+    document.body.appendChild(el);
+    setTimeout(()=>el.remove(),1500);
+  }
+}
+
+// ── HAPTIC ────────────────────────────────────────────────────
+function haptic(p='light'){if('vibrate' in navigator){const m={light:20,medium:50,heavy:100};navigator.vibrate(m[p]||20)}}
+
+// ── MAIN PUNCH ────────────────────────────────────────────────
+let pIn=false,pStart=null,pTimer=null,firstPunch=true;
+const mpb=document.getElementById('mainPunch');
+
+function doPunch(fromKey=false){
+  pIn=!pIn;
+  mpb.classList.remove('rip');void mpb.offsetWidth;mpb.classList.add('rip');
+  mpb.classList.toggle('pressed',true);setTimeout(()=>mpb.classList.remove('pressed'),120);
+  haptic(pIn?'medium':'light');
+  if(pIn){
+    pStart=Date.now();mpb.classList.add('in');
+    document.getElementById('mpi').textContent='✋';
+    document.getElementById('mpl').textContent='Uitprikken';
+    document.getElementById('pnote').textContent='Actief — Space of klik om uit te prikken';
+    document.getElementById('pnote').classList.add('active');
+    playPunch(true);
+    showToast('Ingepikt om '+document.getElementById('pt').textContent);
+    if(firstPunch){
+      firstPunch=false;
+      const r=mpb.getBoundingClientRect();
+      burst(r.left+r.width/2,r.top+r.height/2);
+    }
+    pTimer=setInterval(()=>{
+      const s=Math.floor((Date.now()-pStart)/1000);
+      document.getElementById('mpt').textContent=fmtH(s);
+      document.getElementById('mpw').textContent=fmtH(s+28800);
+    },1000);
+  } else {
+    clearInterval(pTimer);mpb.classList.remove('in');
+    document.getElementById('mpi').textContent='↑';
+    document.getElementById('mpl').textContent='Inprikken';
+    document.getElementById('pnote').textContent='Ingepikt. Prikklok heeft uw uren opgeslagen.';
+    document.getElementById('pnote').classList.remove('active');
+    playPunch(false);
+    showToast('👋 Uitgepikt');
+  }
+}
+
+mpb.addEventListener('click',()=>doPunch());
+
+// Seq punch
+let sqIn=false,sqStart=null,sqTimer=null;
+document.getElementById('sqPunch').addEventListener('click',()=>{
+  sqIn=!sqIn;const btn=document.getElementById('sqPunch');
+  btn.classList.toggle('on',sqIn);
+  document.getElementById('sqpi').textContent=sqIn?'✋':'↑';
+  document.getElementById('sqpl').textContent=sqIn?'Uitprikken':'Inprikken';
+  playPunch(sqIn);haptic();
+  if(sqIn){sqStart=Date.now();sqTimer=setInterval(()=>{const s=Math.floor((Date.now()-sqStart)/1000);document.getElementById('sqtd').textContent=fmtH(s);document.getElementById('sqwk').textContent=fmtH(s+28800)},1000)}
+  else{clearInterval(sqTimer)}
+});
+
+// ── KEYBOARD SHORTCUTS ────────────────────────────────────────
+const scPanel=document.getElementById('shortcuts');
+let scVisible=false;
+function showSc(){scVisible=true;scPanel.classList.add('show')}
+function hideSc(){scVisible=false;scPanel.classList.remove('show')}
+document.getElementById('sc-close').addEventListener('click',hideSc);
+
+// Easter egg: Konami code
+const KONAMI=[38,38,40,40,37,39,37,39,66,65];let ki=0;
+
+document.addEventListener('keydown',e=>{
+  // Konami
+  if(e.keyCode===KONAMI[ki]){ki++;if(ki===KONAMI.length){ki=0;burst(window.innerWidth/2,window.innerHeight/2,120);showToast('Konami Code! +1000 prikbeurten',4000);playPunch(true)}}else ki=0;
+
+  // Don't trigger in inputs
+  if(['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName))return;
+
+  if(e.code==='Space'){e.preventDefault();doPunch(true)}
+  if(e.key==='t'||e.key==='T')toggleTheme();
+  if(e.key==='s'||e.key==='S')sb.click();
+  if(e.key==='?'){scVisible?hideSc():showSc()}
+  if(e.key==='Escape')hideSc();
+});
+
+// ── COUNTERS ──────────────────────────────────────────────────
+const cio=new IntersectionObserver(es=>{es.forEach(e=>{
+  if(!e.isIntersecting)return;
+  const t=+e.target.dataset.count,sfx=e.target.dataset.sfx||'';
+  if(!isNaN(t)){const s=performance.now(),d=1200,ease=t=>1-Math.pow(1-t,3);
+    (function fr(now){const pct=Math.min((now-s)/d,1);e.target.textContent=Math.round(ease(pct)*t)+sfx;if(pct<1)requestAnimationFrame(fr)})(s)}
+  cio.unobserve(e.target);
+})},{threshold:.5});
+document.querySelectorAll('[data-count]').forEach(el=>cio.observe(el));
+
+// ── REVEAL ────────────────────────────────────────────────────
+const rio=new IntersectionObserver(es=>{es.forEach((e,i)=>{if(e.isIntersecting){setTimeout(()=>e.target.classList.add('in'),i*60);rio.unobserve(e.target)}})},{threshold:.07,rootMargin:'0px 0px -20px 0px'});
+document.querySelectorAll('.rv').forEach(el=>rio.observe(el));
+
+// ── 3D FEATURE TILT ──────────────────────────────────────────
+document.querySelectorAll('.fc').forEach(c=>{
+  c.addEventListener('mousemove',e=>{
+    const r=c.getBoundingClientRect(),x=(e.clientX-r.left)/r.width-.5,y=(e.clientY-r.top)/r.height-.5;
+    c.style.transform=`perspective(700px) rotateX(${-y*14}deg) rotateY(${x*14}deg) scale(1.03)`;
+    c.style.setProperty('--mx',((e.clientX-r.left)/r.width*100)+'%');
+    c.style.setProperty('--my',((e.clientY-r.top)/r.height*100)+'%');
+  });
+  c.addEventListener('mouseleave',()=>c.style.transform='');
+});
+
+// ── SCROLL SEQUENCE ───────────────────────────────────────────
+const seqSec=document.getElementById('seq');
+const seqPh=document.getElementById('seqPh');
+const frames=document.querySelectorAll('.seq-frame');
+const txts=document.querySelectorAll('.seq-txt');
+let curFrame=-1;
+
+function setSeqFrame(idx){
+  if(idx===curFrame)return;
+  frames.forEach((f,i)=>{f.classList.remove('active','exit');if(i<idx)f.classList.add('exit');else if(i===idx)f.classList.add('active')});
+  txts.forEach((t,i)=>{t.classList.toggle('hidden',i!==idx)});
+  if(window.innerWidth>860){
+    seqPh.style.transform=`perspective(800px) rotateY(${idx%2===0?-8:8}deg) rotateX(${idx%3===0?2:-2}deg)`;
+  }
+  // Sync mobile dots
+  for(let i=0;i<4;i++){const d=document.getElementById('smd'+i);if(d)d.classList.toggle('on',i===idx)}
+  curFrame=idx;
+}
+
+let autoSeqIdx=0;
+// Auto-advance seq frames on mobile (scroll handles it on desktop)
+setInterval(()=>{
+  if(window.innerWidth>860)return;
+  autoSeqIdx=(autoSeqIdx+1)%4;
+  setSeqFrame(autoSeqIdx);
+},3500);
+
+window.addEventListener('scroll',()=>{
+  if(window.innerWidth<=860)return; // disable on mobile - tabs handle it
+  const r=seqSec.getBoundingClientRect();
+  const total=seqSec.offsetHeight-window.innerHeight;
+  const pct=Math.max(0,Math.min(1,-r.top/total));
+  const idx=Math.min(3,Math.floor(pct*4));
+  setSeqFrame(idx);
+},{passive:true});
+
+// ── ONBOARDING WIZARD ─────────────────────────────────────────
+let wizStep=0;
+const wizScreens=['ws0','ws1','ws2','ws3','ws4'];
+const wizTitles=['Uw team','Uw sector','Bedrijfsnaam','Uw e-mail','Klaar!'];
+const wizNextBtn=document.getElementById('wizNext');
+const wizBackBtn=document.getElementById('wizBack');
+const wizProg=document.getElementById('wizProg');
+let wizData={};
+
+function setWizStep(s){
+  document.getElementById(wizScreens[wizStep])?.classList.remove('active');
+  document.getElementById(wizScreens[wizStep])?.classList.add('exit');
+  setTimeout(()=>{document.getElementById(wizScreens[Math.max(0,wizStep-1)])?.classList.remove('exit')},400);
+  wizStep=s;
+  document.getElementById(wizScreens[s])?.classList.add('active');
+  document.getElementById(wizScreens[s])?.classList.remove('exit');
+  document.getElementById('wizTitle').textContent=s<4?['Welkom bij Prikklok','Uw sector','Bedrijfsnaam','Uw e-mail'][s]:'Klaar!';
+  for(let i=0;i<4;i++)document.getElementById('wd'+i)?.classList.toggle('on',i<=s);
+  wizProg.style.width=((s+1)/4*100)+'%';
+  wizBackBtn.style.opacity=s===0?'0':'1';wizBackBtn.style.pointerEvents=s===0?'none':'auto';
+  wizNextBtn.style.display=s>=4?'none':'block';
+  checkWizNext();
+}
+
+function checkWizNext(){
+  let ok=false;
+  if(wizStep===0)ok=!!document.querySelector('.wiz-opt.sel');
+  if(wizStep===1)ok=!!document.querySelector('.wiz-opt.sel');
+  if(wizStep===2)ok=document.getElementById('wizComp')?.value.trim().length>1;
+  if(wizStep===3)ok=document.getElementById('wizEmail')?.value.includes('@');
+  wizNextBtn.disabled=!ok;
+}
+
+document.querySelectorAll('.wiz-opt').forEach(opt=>{
+  opt.addEventListener('click',()=>{
+    opt.closest('.wiz-opts')?.querySelectorAll('.wiz-opt').forEach(o=>o.classList.remove('sel'));
+    opt.classList.add('sel');wizData['step'+wizStep]=opt.dataset.val;
+    checkWizNext();playClick();
+    // Auto-advance after 400ms
+    setTimeout(()=>{if(wizStep<3)wizNextBtn.click()},420);
+  });
+});
+
+document.getElementById('wizComp')?.addEventListener('input',checkWizNext);
+document.getElementById('wizEmail')?.addEventListener('input',checkWizNext);
+
+wizNextBtn.addEventListener('click',()=>{
+  if(wizStep<3){setWizStep(wizStep+1);playClick()}
+  else if(wizStep===3){
+    const email=document.getElementById('wizEmail').value;
+    const comp=document.getElementById('wizComp').value||'uw bedrijf';
+    const name=comp.split(' ')[0];
+    document.getElementById('wizName').textContent=name+'!';
+    document.getElementById('wizMsg').textContent=`We maken uw demo-omgeving klaar voor ${comp}. U ontvangt een bevestiging op ${email}.`;
+    setWizStep(4);
+    setTimeout(()=>{
+      const ico=document.getElementById('wizIco');if(ico){ico.classList.remove();ico.classList.add('big-ico');ico.textContent='✓'}
+      burst(window.innerWidth/2,window.innerHeight*.4,80);
+      playPunch(true);haptic('heavy');
+      showToast('Demo aangevraagd!',3000);
+    },200);
+  }
+});
+
+wizBackBtn.addEventListener('click',()=>{if(wizStep>0){setWizStep(wizStep-1);playClick()}});
+
+// ── TIMELINE ──────────────────────────────────────────────────
+const now=new Date();
+document.getElementById('tlDate2').textContent=`Vandaag — ${DAYS[now.getDay()]} ${now.getDate()} ${MON[now.getMonth()]} ${now.getFullYear()}`;
+const TLT=[
+  {n:'Lisa V.',a:'👩',blocks:[{s:8.2,e:12,c:'#0071e3'},{s:12,e:12.5,c:'#34c759'},{s:12.5,e:17,c:'#0071e3'}]},
+  {n:'Tom D.',a:'👨',blocks:[{s:9,e:12.5,c:'#0071e3'},{s:12.5,e:13,c:'#34c759'},{s:13,e:16,c:'#0071e3'}]},
+  {n:'Sara K.',a:'🧑',blocks:[{s:7.75,e:12,c:'#0071e3'},{s:12,e:12.5,c:'#34c759'},{s:12.5,e:15.5,c:'#0071e3'}]},
+  {n:'Emma R.',a:'👩‍💼',blocks:[{s:8,e:12,c:'#0071e3'}]},
+  {n:'Luc M.',a:'👨‍💼',blocks:[{s:7.75,e:12,c:'#0071e3'},{s:12,e:12.5,c:'#34c759'},{s:12.5,e:17.5,c:'#0071e3'}]},
+];
+const HRS=Array.from({length:12},(_,i)=>i+7);
+const NH=now.getHours()+(now.getMinutes()/60);
+const TH=HRS.length;
+const pct=x=>((x-HRS[0])/TH*100).toFixed(2)+'%';
+const wid=x=>(x/TH*100).toFixed(2)+'%';
+const tlG=document.getElementById('tlG');
+let html=`<div class="tl-gh">${HRS.map(h=>`<div class="tl-hr">${p2(h)}:00</div>`).join('')}</div><div class="tl-rows">`;
+TLT.forEach(p=>{
+  html+=`<div class="tl-row"><div class="tl-rn"><div class="tl-av">${p.a}</div>${p.n.split(' ')[0]}</div><div class="tl-tr">`;
+  p.blocks.forEach(b=>{
+    const bS=Math.floor(b.s),bSm=Math.round((b.s%1)*60),bE=Math.floor(b.e),bEm=Math.round((b.e%1)*60);
+    html+=`<div class="tlb" style="left:${pct(b.s)};width:${wid(b.e-b.s)};background:${b.c}" data-start="${b.s}" data-end="${b.e}">${p2(bS)}:${p2(bSm)}–${p2(bE)}:${p2(bEm)}</div>`;
+  });
+  if(NH>HRS[0]&&NH<HRS[HRS.length-1])html+=`<div class="nl" style="left:${pct(NH)}"></div>`;
+  html+=`</div></div>`;
+});
+html+=`</div>`;tlG.innerHTML=html;
+
+let dragEl=null,dragSX=0,dragOL=0;
+tlG.querySelectorAll('.tlb').forEach(b=>{
+  b.addEventListener('mousedown',e=>{dragEl=b;dragSX=e.clientX;dragOL=parseFloat(b.style.left);b.classList.add('drag');e.preventDefault()});
+});
+document.addEventListener('mousemove',e=>{
+  if(!dragEl)return;
+  const tr=dragEl.parentElement,tw=tr.getBoundingClientRect().width;
+  const dx=(e.clientX-dragSX)/tw*100;
+  const nl=Math.max(0,Math.min(dragOL+dx,100-parseFloat(dragEl.style.width)));
+  dragEl.style.left=nl+'%';
+  const ns=(nl/100)*TH+HRS[0],ne=ns+(+dragEl.dataset.end-+dragEl.dataset.start);
+  dragEl.textContent=`${p2(Math.floor(ns))}:${p2(Math.round((ns%1)*60))}–${p2(Math.floor(ne))}:${p2(Math.round((ne%1)*60))}`;
+});
+document.addEventListener('mouseup',()=>{if(dragEl){dragEl.classList.remove('drag');dragEl=null;playClick()}});
+let tlDrag=false,tlSX=0,tlSL=0;
+tlG.addEventListener('mousedown',e=>{if(!e.target.classList.contains('tlb')){tlDrag=true;tlSX=e.clientX;tlSL=tlG.scrollLeft}});
+tlG.addEventListener('mousemove',e=>{if(tlDrag&&!dragEl)tlG.scrollLeft=tlSL-(e.clientX-tlSX)});
+document.addEventListener('mouseup',()=>tlDrag=false);
+
+// ── DASHBOARD ─────────────────────────────────────────────────
+const TEAM=[
+  {n:'Lisa V.',a:'LV',ac:'rgba(0,113,227,.1)',tc:'var(--blue)',st:'in',t:'08:12',p:78},
+  {n:'Tom D.',a:'TD',ac:'rgba(255,149,0,.1)',tc:'var(--orange)',st:'break',t:'Pauze',p:55},
+  {n:'Sara K.',a:'SK',ac:'rgba(0,113,227,.1)',tc:'var(--blue)',st:'in',t:'09:00',p:64},
+  {n:'Emma R.',a:'ER',ac:'rgba(174,174,178,.1)',tc:'var(--text3)',st:'out',t:'Afwezig',p:40},
+  {n:'Luc M.',a:'LM',ac:'rgba(52,199,89,.1)',tc:'var(--green)',st:'in',t:'07:45',p:88},
+];
+const lvL=document.getElementById('lvList');
+TEAM.forEach(p=>{lvL.innerHTML+=`<div class="lvrow"><div class="lv-av" style="background:${p.ac};color:${p.tc};font-size:10px;font-weight:700">${p.a}</div><div style="flex:1;min-width:0"><div class="lv-nm">${p.n}</div><div class="lv-t">${p.t}</div><div class="lv-bw"><div class="lv-bf" data-w="${p.p}"></div></div></div><div class="lv-st ${p.st==='in'?'si-in':p.st==='break'?'si-br':'si-ou'}">${p.st==='in'?'Aanwezig':p.st==='break'?'Pauze':'Afwezig'}</div></div>`});
+
+const NOTIFS=[
+  {i:'↑',c:'g',t:'Lisa V. ingepikt',s:'Vandaag 08:12',tm:'nu'},
+  {i:'—',c:'o',t:'Tom D. pauze',s:'Vandaag 12:30',tm:'1m'},
+  {i:'≡',c:'b',t:'Weekrapport klaar',s:'Oktober week 43',tm:'5m'},
+  {i:'!',c:'r',t:'Emma vergeet uitprikken',s:'Reminder verstuurd',tm:'12m'},
+  {i:'✓',c:'g',t:'Luc M. uitgepikt',s:'Gisteren 17:02',tm:'gist.'},
+];
+const nF=document.getElementById('nFeed');
+NOTIFS.forEach(n=>{nF.innerHTML+=`<div class="nrow"><div class="n-ico ${n.c}">${n.i}</div><div class="n-body" style="flex:1"><div class="n-ti">${n.t}</div><div class="n-su">${n.s}</div></div><div class="n-tm">${n.tm}</div></div>`});
+
+const HDATA=[{n:'Lisa V.',h:'7:45',p:78},{n:'Tom D.',h:'5:30',p:55},{n:'Sara K.',h:'6:15',p:64},{n:'Emma R.',h:'4:00',p:40},{n:'Luc M.',h:'8:10',p:81}];
+const hbL=document.getElementById('hbList');
+HDATA.forEach(d=>{hbL.innerHTML+=`<div class="hbar"><div class="hbar-top"><span class="hbar-nm">${d.n}</span><span class="hbar-vl">${d.h}</span></div><div class="hbar-tr"><div class="hbar-fi" data-w="${d.p}" style="background:var(--blue)"></div></div></div>`});
+
+// Animate on enter
+const dashIO=new IntersectionObserver(es=>{es.forEach(e=>{
+  if(e.isIntersecting){
+    e.target.querySelectorAll('[data-w]').forEach((b,i)=>setTimeout(()=>b.style.width=b.dataset.w+'%',i*80+200));
+    e.target.querySelectorAll('.nrow').forEach((n,i)=>setTimeout(()=>n.classList.add('show'),i*100+300));
+    dashIO.unobserve(e.target);
+  }
+})},{threshold:.25});
+document.querySelectorAll('.dc').forEach(c=>dashIO.observe(c));
+
+// Animate donut
+const doIO=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){
+  document.getElementById('doIn').setAttribute('stroke-dasharray','211 141');
+  document.getElementById('doBreak').setAttribute('stroke-dasharray','53 299');
+  doIO.disconnect();
+}})},{threshold:.5});
+const doEl=document.querySelector('#dash svg');if(doEl)doIO.observe(doEl);
+
+// Simulate live updates every 8s
+setInterval(()=>{
+  const row=lvL.querySelectorAll('.lvrow');
+  if(!row.length)return;
+  const r=row[Math.floor(Math.random()*row.length)];
+  r.style.transition='background .3s';r.style.background='rgba(0,113,227,.08)';
+  setTimeout(()=>r.style.background='',1000);
+},8000);
+
+// ── SMOOTH SCROLL ─────────────────────────────────────────────
+document.querySelectorAll('a[href^="#"]').forEach(a=>a.addEventListener('click',e=>{const t=document.querySelector(a.getAttribute('href'));if(t){e.preventDefault();t.scrollIntoView({behavior:'smooth',block:'start'})}}));
+
+// ── FORM ──────────────────────────────────────────────────────
+document.getElementById('cForm').addEventListener('submit',async function(e){
+  e.preventDefault();
+  const nm=document.getElementById('nm').value.trim();
+  const em=document.getElementById('em').value.trim();
+  const su=document.getElementById('su').value;
+  const ms=document.getElementById('ms').value.trim();
+  if(!nm||!em.includes('@')||!su||ms.length<10)return;
+
+  const sb2=document.getElementById('subBtn');
+  sb2.textContent='Verzenden…';sb2.disabled=true;
+
+  try {
+    const res=await fetch('https://formspree.io/f/JOUW_FORM_ID',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Accept':'application/json'},
+      body:JSON.stringify({
+        naam: nm,
+        bedrijf: document.getElementById('co').value.trim(),
+        email: em,
+        telefoon: document.getElementById('ph').value.trim(),
+        onderwerp: su,
+        bericht: ms,
+        _subject: 'Nieuw bericht via prikklok.one — '+nm,
+      })
+    });
+    if(res.ok){
+      this.style.display='none';
+      document.getElementById('fSucc').classList.add('show');
+      burst(window.innerWidth/2,window.innerHeight/2,60);
+      showToast('Bericht verzonden!',3000);
+      playPunch(true);
+    } else {
+      sb2.textContent='Verzend bericht';sb2.disabled=false;
+      showToast('Er ging iets mis. Probeer opnieuw.',3000);
+    }
+  } catch(err){
+    sb2.textContent='Verzend bericht';sb2.disabled=false;
+    showToast('Geen verbinding. Probeer opnieuw.',3000);
+  }
+});
+
+// ── PHONE TILT ON MOUSE ───────────────────────────────────────
+document.getElementById('hero').addEventListener('mousemove',e=>{
+  const ph=document.getElementById('heroPh'),r=ph.getBoundingClientRect();
+  const cx2=r.left+r.width/2,cy2=r.top+r.height/2;
+  const dx=(e.clientX-cx2)/window.innerWidth*20,dy=(e.clientY-cy2)/window.innerHeight*20;
+  ph.style.transform=`perspective(800px) rotateY(${dx}deg) rotateX(${-dy}deg)`;
+});
+document.getElementById('hero').addEventListener('mouseleave',()=>{
+  document.getElementById('heroPh').style.transform='';
+});
+</script>
+</body>
+</html>
