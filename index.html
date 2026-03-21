@@ -6,10 +6,13 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
 <meta http-equiv="Pragma" content="no-cache"/>
 <meta http-equiv="Expires" content="0"/>
-<title>Prikklok – Digitale Tijdregistratie</title>
-<meta name="description" content="Prikklok digitaliseert uw werkuren. Medewerkers prikken in en uit via smartphone."/>
+<title>Prikklok – Digitale Tijdregistratie App voor Bedrijven | iOS & Android</title>
+<meta name="description" content="Prikklok digitaliseert uw werkuren. Medewerkers prikken eenvoudig in en uit via smartphone. Real-time overzichten, GDPR-conform, iOS & Android."/>
 <meta name="robots" content="index, follow"/>
-<link rel="canonical" href="https://www.prikklok.one/"/>
+<link rel="canonical" href="https://prikklok.info/"/>
+<!-- Favicon -->
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%230071e3'/><text y='.9em' font-size='70' x='15' fill='white'>P</text></svg>"/>
+<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%230071e3'/><text y='.9em' font-size='70' x='15' fill='white'>P</text></svg>"/>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
@@ -514,7 +517,7 @@ footer{background:var(--bg2);border-top:1px solid var(--sep);padding:22px 24px;t
 <section class="hero" id="hero">
   <canvas id="pCanvas"></canvas>
   <div class="hero-c">
-    <h1 id="H1"></h1>
+    <h1 id="H1"><span class="ch on" style="transition:none">Elk werkuur. Precies bijgehouden.</span></h1>
     <p class="hsub">Prikklok digitaliseert uw werkuren. Medewerkers inchecken in één tik, overzichten real-time, rapporten exporteren wanneer u wilt.</p>
     <div class="hbtns">
       <div class="mag"><a href="#seq" class="btn bp" id="bp">App verkennen</a></div>
@@ -1023,6 +1026,7 @@ function drwLines(){
 
 // ── SPLIT TITLE ───────────────────────────────────────────────
 const h1=document.getElementById('H1');
+h1.innerHTML=''; // clear static SEO text, animate fresh
 'Elk werkuur.\nPrecies bijgehouden.'.split('').forEach((c,i)=>{
   if(c==='\n'){h1.appendChild(document.createElement('br'));return}
   const s=document.createElement('span');s.className='ch';s.textContent=c===' '?'\u00a0':c;
